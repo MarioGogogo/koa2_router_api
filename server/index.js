@@ -1,6 +1,6 @@
 const Koa = require('koa');
 const { resolve } = require('path');
-const views = require('koa-views');
+const koaStatic = require('koa-static');
 const R = require('ramda');
 const MIDDLEWARES = [ 'common', 'router' ];
 
@@ -15,12 +15,11 @@ const useMiddlewares = (app) => {
 (async () => {
   //创建实例
   const app = new Koa();
-  //views
-  app.use(
-    views(resolve(__dirname, '../views'), {
-      extension : 'html'
-    })
-  );
+
+  // 配置静态资源
+  // 配置静态资源
+  const staticPath = '../views';
+  app.use(koaStatic(resolve(__dirname, staticPath)));
 
   // error logger
   app.on('error', (err, ctx) => {
