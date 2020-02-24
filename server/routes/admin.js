@@ -1,6 +1,6 @@
 const { controller, get, post, del, auth, admin, required } = require('../lib/decorator');
 
-@controller('/admin')
+@controller('/api/v0/admin')
 export class adminController {
   @get('/movie/list')
   @admin('admin')
