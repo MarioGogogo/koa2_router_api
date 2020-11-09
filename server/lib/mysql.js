@@ -1,12 +1,12 @@
-var mysql = require('mysql');
-var config = require('../config/default.js');
+var mysql = require("mysql");
+var config = require("../config/default.js");
 
 var pool = mysql.createPool({
-  host     : config.database.HOST,
-  user     : config.database.USERNAME,
-  password : config.database.PASSWORD,
-  database : config.database.DATABASE,
-  port     : config.database.PORT
+  host: config.database.HOST,
+  user: config.database.USERNAME,
+  password: config.database.PASSWORD,
+  database: config.database.DATABASE,
+  port: config.database.PORT,
 });
 
 let query = (sql, values) => {
@@ -20,7 +20,7 @@ let query = (sql, values) => {
           if (err) {
             reject(err);
           } else {
-            console.log('数据库连接正常');
+            console.log("数据库连接正常");
             resolve(rows);
           }
           connection.release();
@@ -32,7 +32,7 @@ let query = (sql, values) => {
 
 // 数据库表格创建
 const createTables = {
-  users          : `CREATE TABLE IF NOT EXISTS user_info (
+  users: `CREATE TABLE IF NOT EXISTS user_info (
       id INT PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT '(自增长)',
       user_id VARCHAR ( 100 ) NOT NULL COMMENT '账号',
       user_name VARCHAR ( 100 ) NOT NULL COMMENT '用户名',
@@ -44,17 +44,17 @@ const createTables = {
       user_login_time TIMESTAMP DEFAULT NOW( ) COMMENT '登录时间',
       user_count INT COMMENT '登录次数'
     ) ENGINE = INNODB charset = utf8;`,
-  role           : `CREATE TABLE IF NOT EXISTS role_info (
+  role: `CREATE TABLE IF NOT EXISTS role_info (
       id INT PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT '(自增长)',
       role_name VARCHAR ( 20 ) NOT NULL COMMENT '角色名',
       role_description VARCHAR ( 255 ) DEFAULT NULL COMMENT '描述'
     ) ENGINE = INNODB charset = utf8;`,
-  permission     : `CREATE TABLE IF NOT EXISTS permission_info (
+  permission: `CREATE TABLE IF NOT EXISTS permission_info (
       id INT PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT '(自增长)',
       permission_name VARCHAR ( 20 ) NOT NULL COMMENT '权限名',
       permission_description VARCHAR ( 255 ) DEFAULT NULL COMMENT '描述'
     ) ENGINE = INNODB charset = utf8;`,
-  userRole       : `CREATE TABLE IF NOT EXISTS user_role (
+  userRole: `CREATE TABLE IF NOT EXISTS user_role (
       id INT PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT '(自增长)',
       user_id INT NOT NULL COMMENT '关联用户',
       role_id INT NOT NULL COMMENT '关联角色',
@@ -63,7 +63,7 @@ const createTables = {
       CONSTRAINT fk_user_role_role_info_1 FOREIGN KEY ( role_id ) REFERENCES role_info ( id ) ON DELETE CASCADE ON UPDATE CASCADE,
       CONSTRAINT fk_user_role_user_info_1 FOREIGN KEY ( user_id ) REFERENCES user_info ( id ) ON DELETE CASCADE ON UPDATE CASCADE
     ) ENGINE = INNODB charset = utf8;`,
-  rolePermission : `CREATE TABLE IF NOT EXISTS role_permission (
+  rolePermission: `CREATE TABLE IF NOT EXISTS role_permission (
       id INT PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT '(自增长)',
       role_id INT NOT NULL COMMENT '关联角色',
       permission_id INT NOT NULL COMMENT '关联权限',
@@ -71,26 +71,26 @@ const createTables = {
       KEY fk_role_permission_permission_info_1 ( permission_id ),
       CONSTRAINT fk_role_permission_role_info_1 FOREIGN KEY ( role_id ) REFERENCES role_info ( id ) ON DELETE CASCADE ON UPDATE CASCADE,
       CONSTRAINT fk_role_permission_permission_info_1 FOREIGN KEY ( permission_id ) REFERENCES permission_info ( id ) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE = INNODB charset = utf8;`
+    ) ENGINE = INNODB charset = utf8;`,
 };
 
 let createTable = (sql) => {
   return query(sql, []);
 };
 
-// 建表
-createTable(createTables.users);
-createTable(createTables.role);
-createTable(createTables.permission);
-createTable(createTables.userRole);
-createTable(createTables.rolePermission);
+// 连接数据库--------------建表
+// createTable(createTables.users);
+// createTable(createTables.role);
+// createTable(createTables.permission);
+// createTable(createTables.userRole);
+// createTable(createTables.rolePermission);
 
 // 注册用户
 // 通过名字查找用户
-const findDataByName = (name) => {
-  let _sql = `select * from user_info where user_name="${name}";`;
-  return query(_sql);
-};
-findDataByName('jack').then((res) => {
-  console.log(res);
-});
+// const findDataByName = (name) => {
+//   let _sql = `select * from user_info where user_name="${name}";`;
+//   return query(_sql);
+// };
+// findDataByName("jack").then((res) => {
+//   console.log(res);
+// });
