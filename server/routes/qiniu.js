@@ -1,7 +1,11 @@
+import { reject } from "lodash";
+
 const { controller, get, post, put } = require("../lib/decorator");
 const qiniu = require("qiniu");
+const { resolutionTime } = require('../utils/util')
 @controller("/api/v0")
 export class qiniuController {
+  //api:获取七牛云token
   @get("/getToken")
   async getToken(ctx, next) {
     // accessKey，secretKey 在个人中心可以查看
@@ -17,6 +21,7 @@ export class qiniuController {
     const key = +new Date() + Math.random().toString(16).slice(2); // key 只需要随机不重复就可以
     ctx.body = { status: 1, data: { token, key } };
   }
+  //api:获取七牛云所有图片
   @get("/getList")
   async getList(ctx) {
     //获取数据量
@@ -45,13 +50,45 @@ export class qiniuController {
       options,
       limit
     );
-
     ctx.body = { status: 1, data: res };
+  }
+  //api:删除七牛云一张图片
+  @post("/deteleQiniuImage")
+  async deteleQiniuImage(ctx) {
+    let { key } = ctx.request.body;
+    const accessKey = "toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6";
+    const secretKey = "ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o";
+    var mac = new qiniu.auth.digest.Mac(accessKey, secretKey);
+    var config = new qiniu.conf.Config();
+    config.zone = qiniu.zone.Zone_z0;
+    var bucket = "h5monkey";
+    var bucketManager = new qiniu.rs.BucketManager(mac, config);
+    const res = await asyncDeteleImage(bucketManager, bucket, key)
+    if (res.statusCode === 200) {
+      ctx.body = { success: true, msg: "删除成功" };
+    } else {
+      ctx.body = { success: false, msg: res.data.error };
+    }
+  }
+  //api:（还没有完成测试） 批量删除图片
+  @post('/deletePicturesInBulk')
+  async deletePicturesInBulk(ctx) {
+    let { keys } = ctx.request.body;
+    // 循环遍历keys插入下面数组
+    //每个operations的数量不可以超过1000个，如果总数量超过1000，需要分批发送
+    var deleteOperations = [
+      qiniu.rs.deleteOp(srcBucket, 'qiniu1.mp4'),
+      qiniu.rs.deleteOp(srcBucket, 'qiniu2.mp4'),
+      qiniu.rs.deleteOp(srcBucket, 'qiniu3.mp4'),
+      qiniu.rs.deleteOp(srcBucket, 'qiniu4x.mp4'),
+    ];
+    const res = await asyncDeteleAllImage(bucketManager,deleteOperations)
+    ctx.body = { success: true, msg: "全部删除成功" };
   }
 }
 
 //获取全部图片
-const asyncGetListPrefixV2 = async (
+const asyncGetListPrefixV2 = (
   bucketManager,
   srcBucket,
   options,
@@ -95,52 +132,47 @@ const asyncGetListPrefixV2 = async (
   });
 };
 
-//时间戳转换为时间
-const resolutionTime = (timestamp) => {
-  timestamp = timestamp + "";
-  if (timestamp.length > 13) {
-    timestamp = timestamp.slice(0, 13);
-    timestamp = Number(timestamp);
-  }
-  //获取当前时间
-  var now = new Date();
-  //根据指定时间戳转换为时间格式
-  var time = new Date();
-  time.setTime(timestamp);
-  //比较当前时间和指定时间的差来决定显示时间格式
-  //1.年份与当前不同则显示完整日期 yyyy-MM-dd hh:mm
-  if (time.getFullYear() != now.getFullYear())
-    return (
-      time.getFullYear() +
-      "-" +
-      (time.getMonth() + 1 < 10
-        ? "0" + (time.getMonth() + 1)
-        : time.getMonth() + 1) +
-      "-" +
-      (time.getDate() < 10 ? "0" + time.getDate() : time.getDate()) +
-      " " +
-      (time.getHours() < 10 ? "0" + time.getHours() : time.getHours()) +
-      ":" +
-      (time.getMinutes() < 10 ? "0" + time.getMinutes() : time.getMinutes())
-    );
-  //2.年份与当前相同但月份或日期不同时 显示 MM-dd hh:mm格式
-  else if (time.getMonth() != now.getMonth() || time.getDate() != now.getDate())
-    return (
-      (time.getMonth() + 1 < 10
-        ? "0" + (time.getMonth() + 1)
-        : time.getMonth() + 1) +
-      "-" +
-      (time.getDate() < 10 ? "0" + time.getDate() : time.getDate()) +
-      " " +
-      (time.getHours() < 10 ? "0" + time.getHours() : time.getHours()) +
-      ":" +
-      (time.getMinutes() < 10 ? "0" + time.getMinutes() : time.getMinutes())
-    );
-  //3.年份与日期均与当前相同时，显示hh:mm格式
-  else
-    return (
-      (time.getHours() < 10 ? "0" + time.getHours() : time.getHours()) +
-      ":" +
-      (time.getMinutes() < 10 ? "0" + time.getMinutes() : time.getMinutes())
-    );
-};
+
+
+//删除七牛云图片
+const asyncDeteleImage = async (bucketManager, bucket, key) => {
+  return new Promise((reslove, reject) => {
+    return bucketManager.delete(bucket, key, function (err, respBody, respInfo) {
+      if (err) {
+        console.log(err);
+        reject(err)
+      } else {
+        console.log(respInfo.statusCode);
+        console.log(respBody);
+        reslove(respInfo)
+      }
+    });
+  })
+
+}
+
+//批量删除图片
+const asyncDeteleAllImage = async (bucketManager,deleteOperations) => {
+  return new Promise((reslove, reject) => {
+    return bucketManager.batch(deleteOperations, function (err, respBody, respInfo) {
+      if (err) {
+        console.log(err);
+        //throw err;
+      } else {
+        // 200 is success, 298 is part success
+        if (parseInt(respInfo.statusCode / 100) == 2) {
+          respBody.forEach(function (item) {
+            if (item.code == 200) {
+              console.log(item.code + "\tsuccess");
+            } else {
+              console.log(item.code + "\t" + item.data.error);
+            }
+          });
+        } else {
+          console.log(respInfo.deleteusCode);
+          console.log(respBody);
+        }
+      }
+    });
+  })
+}

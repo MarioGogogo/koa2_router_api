@@ -3,6 +3,7 @@ const userModel = require('../lib/mysql.js');
 
 @controller('/api/v0/user')
 export class userController {
+  //api:查询数据库用户
   @get('/')
   async login(ctx, next) {
     const result = await userModel.findDataByName('jack');
