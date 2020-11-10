@@ -1,18 +1,21 @@
 const Koa = require('koa');
 const { resolve } = require('path');
 const koaStatic = require('koa-static');
+const cors = require('koa2-cors');
 const R = require('ramda');
-const MIDDLEWARES = [ 'common', 'router' ];
+const MIDDLEWARES = ['common', 'router'];
 
 /**
  * 封装中间件
- * @param {*} app 
+ * @param {*} app
  */
 const useMiddlewares = (app) => {
   R.map(
-    R.compose(R.forEachObjIndexed((initWith) => initWith(app)), require, (name) =>
-      resolve(__dirname, `./middlewares/${name}`)
-    )
+    R.compose(
+      R.forEachObjIndexed((initWith) => initWith(app)),
+      require,
+      (name) => resolve(__dirname, `./middlewares/${name}`),
+    ),
   )(MIDDLEWARES);
 };
 
@@ -20,6 +23,8 @@ const useMiddlewares = (app) => {
   //创建实例
   const app = new Koa();
 
+  //解决跨域
+  app.use(cors());
   // 配置静态资源
   const staticPath = '../views';
   app.use(koaStatic(resolve(__dirname, staticPath)));

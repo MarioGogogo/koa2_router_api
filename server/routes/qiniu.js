@@ -1,20 +1,20 @@
-import { reject } from "lodash";
+import { reject } from 'lodash';
 
-const { controller, get, post, put } = require("../lib/decorator");
-const qiniu = require("qiniu");
-const { resolutionTime } = require('../utils/util')
-@controller("/api/v0")
+const { controller, get, post, put } = require('../lib/decorator');
+const qiniu = require('qiniu');
+const { resolutionTime } = require('../utils/util');
+@controller('/api/v0')
 export class qiniuController {
   //api:获取七牛云token
-  @get("/getToken")
+  @get('/getToken')
   async getToken(ctx, next) {
     // accessKey，secretKey 在个人中心可以查看
-    const accessKey = "toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6";
-    const secretKey = "ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o";
+    const accessKey = 'toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6';
+    const secretKey = 'ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o';
     // 鉴权对象 mac
     const mac = new qiniu.auth.digest.Mac(accessKey, secretKey);
     const options = {
-      scope: "h5monkey", // 仓库名
+      scope: 'mall', // 仓库名
     };
     const putPolicy = new qiniu.rs.PutPolicy(options);
     const token = putPolicy.uploadToken(mac);
@@ -22,19 +22,19 @@ export class qiniuController {
     ctx.body = { status: 1, data: { token, key } };
   }
   //api:获取七牛云所有图片
-  @get("/getList")
+  @get('/getList')
   async getList(ctx) {
     //获取数据量
     const limit = ctx.query.limit;
     // accessKey，secretKey 在个人中心可以查看
-    const accessKey = "toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6";
-    const secretKey = "ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o";
+    const accessKey = 'toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6';
+    const secretKey = 'ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o';
     var mac = new qiniu.auth.digest.Mac(accessKey, secretKey);
     var config = new qiniu.conf.Config();
     // config.useHttpsDomain = true;
     config.zone = qiniu.zone.Zone_z0;
     var bucketManager = new qiniu.rs.BucketManager(mac, config);
-    var srcBucket = "h5monkey";
+    var srcBucket = 'mall';
     // @param options 列举操作的可选参数
     //                prefix    列举的文件前缀
     //                marker    上一次列举返回的位置标记，作为本次列举的起点信息
@@ -44,28 +44,23 @@ export class qiniuController {
       limit: limit,
     };
     if (limit == 0) return (ctx.body = { status: 1, data: [] });
-    const res = await asyncGetListPrefixV2(
-      bucketManager,
-      srcBucket,
-      options,
-      limit
-    );
+    const res = await asyncGetListPrefixV2(bucketManager, srcBucket, options, limit);
     ctx.body = { status: 1, data: res };
   }
   //api:删除七牛云一张图片
-  @post("/deteleQiniuImage")
+  @post('/deteleQiniuImage')
   async deteleQiniuImage(ctx) {
     let { key } = ctx.request.body;
-    const accessKey = "toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6";
-    const secretKey = "ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o";
+    const accessKey = 'toY7J37YRhafqwU8wAqyDlK5jtEtgP3zW5GtmYV6';
+    const secretKey = 'ynDwvoGnVhqpEUQWdR_6RqTxkdQnAA9C5zandR5o';
     var mac = new qiniu.auth.digest.Mac(accessKey, secretKey);
     var config = new qiniu.conf.Config();
     config.zone = qiniu.zone.Zone_z0;
-    var bucket = "h5monkey";
+    var bucket = 'mall';
     var bucketManager = new qiniu.rs.BucketManager(mac, config);
-    const res = await asyncDeteleImage(bucketManager, bucket, key)
+    const res = await asyncDeteleImage(bucketManager, bucket, key);
     if (res.statusCode === 200) {
-      ctx.body = { success: true, msg: "删除成功" };
+      ctx.body = { success: true, msg: '删除成功' };
     } else {
       ctx.body = { success: false, msg: res.data.error };
     }
@@ -82,57 +77,46 @@ export class qiniuController {
       qiniu.rs.deleteOp(srcBucket, 'qiniu3.mp4'),
       qiniu.rs.deleteOp(srcBucket, 'qiniu4x.mp4'),
     ];
-    const res = await asyncDeteleAllImage(bucketManager,deleteOperations)
-    ctx.body = { success: true, msg: "全部删除成功" };
+    const res = await asyncDeteleAllImage(bucketManager, deleteOperations);
+    ctx.body = { success: true, msg: '全部删除成功' };
   }
 }
 
 //获取全部图片
-const asyncGetListPrefixV2 = (
-  bucketManager,
-  srcBucket,
-  options,
-  limit
-) => {
+const asyncGetListPrefixV2 = (bucketManager, srcBucket, options, limit) => {
   return new Promise((reslove, reject) => {
-    return bucketManager.listPrefixV2(
-      srcBucket,
-      options,
-      (err, respBody, respInfo) => {
-        if (err && err.res.statusCode != 200) {
-          reject(err);
-          throw err;
-        }
-        let newArr = [];
-        //如果limit是1则直接返回respBody对象 否则 respBody是字符串
-        if (limit == 1) {
-          newArr.push(respBody.item);
-          reslove(newArr);
-        } else {
-          //解析respBody
-          const res = respBody.split("\n");
-          res.forEach((item) => {
-            //数组最后一位是空要去除
-            if (item) {
-              const arr = JSON.parse(item);
-              //时间戳转换
-              let newItem = arr.item;
-              if (arr.item.putTime) {
-                newItem = Object.assign({}, arr.item, {
-                  ctime: resolutionTime(arr.item.putTime),
-                });
-              }
-              newArr.push(newItem);
-            }
-          });
-          reslove(newArr);
-        }
+    return bucketManager.listPrefixV2(srcBucket, options, (err, respBody, respInfo) => {
+      if (err && err.res.statusCode != 200) {
+        reject(err);
+        throw err;
       }
-    );
+      let newArr = [];
+      //如果limit是1则直接返回respBody对象 否则 respBody是字符串
+      if (limit == 1) {
+        newArr.push(respBody.item);
+        reslove(newArr);
+      } else {
+        //解析respBody
+        const res = respBody.split('\n');
+        res.forEach((item) => {
+          //数组最后一位是空要去除
+          if (item) {
+            const arr = JSON.parse(item);
+            //时间戳转换
+            let newItem = arr.item;
+            if (arr.item.putTime) {
+              newItem = Object.assign({}, arr.item, {
+                ctime: resolutionTime(arr.item.putTime),
+              });
+            }
+            newArr.push(newItem);
+          }
+        });
+        reslove(newArr);
+      }
+    });
   });
 };
-
-
 
 //删除七牛云图片
 const asyncDeteleImage = async (bucketManager, bucket, key) => {
@@ -140,19 +124,18 @@ const asyncDeteleImage = async (bucketManager, bucket, key) => {
     return bucketManager.delete(bucket, key, function (err, respBody, respInfo) {
       if (err) {
         console.log(err);
-        reject(err)
+        reject(err);
       } else {
         console.log(respInfo.statusCode);
         console.log(respBody);
-        reslove(respInfo)
+        reslove(respInfo);
       }
     });
-  })
-
-}
+  });
+};
 
 //批量删除图片
-const asyncDeteleAllImage = async (bucketManager,deleteOperations) => {
+const asyncDeteleAllImage = async (bucketManager, deleteOperations) => {
   return new Promise((reslove, reject) => {
     return bucketManager.batch(deleteOperations, function (err, respBody, respInfo) {
       if (err) {
@@ -163,9 +146,9 @@ const asyncDeteleAllImage = async (bucketManager,deleteOperations) => {
         if (parseInt(respInfo.statusCode / 100) == 2) {
           respBody.forEach(function (item) {
             if (item.code == 200) {
-              console.log(item.code + "\tsuccess");
+              console.log(item.code + '\tsuccess');
             } else {
-              console.log(item.code + "\t" + item.data.error);
+              console.log(item.code + '\t' + item.data.error);
             }
           });
         } else {
@@ -174,5 +157,5 @@ const asyncDeteleAllImage = async (bucketManager,deleteOperations) => {
         }
       }
     });
-  })
-}
+  });
+};

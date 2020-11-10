@@ -1,5 +1,5 @@
-var mysql = require("mysql");
-var config = require("../config/default.js");
+var mysql = require('mysql');
+var config = require('../config/default.js');
 
 var pool = mysql.createPool({
   host: config.database.HOST,
@@ -20,7 +20,7 @@ let query = (sql, values) => {
           if (err) {
             reject(err);
           } else {
-            console.log("数据库连接正常");
+            console.log('数据库连接正常');
             resolve(rows);
           }
           connection.release();
@@ -79,18 +79,19 @@ let createTable = (sql) => {
 };
 
 // 连接数据库--------------建表
+console.log('连接数据库--------------建表 :>> ');
 // createTable(createTables.users);
 // createTable(createTables.role);
 // createTable(createTables.permission);
 // createTable(createTables.userRole);
 // createTable(createTables.rolePermission);
 
-// 注册用户
-// 通过名字查找用户
+// 注册用户;
+// 通过名字查找用户;
 // const findDataByName = (name) => {
 //   let _sql = `select * from user_info where user_name="${name}";`;
 //   return query(_sql);
 // };
-// findDataByName("jack").then((res) => {
+// findDataByName('jack').then((res) => {
 //   console.log(res);
 // });
