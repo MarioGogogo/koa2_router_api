@@ -1,3 +1,4 @@
+// 这是一个关于装饰器的练习
 class Boy {
   @speak('Chinese')
   run() {
