@@ -3,7 +3,7 @@ const send = require('koa-send');
 
 @controller('/api/v0')
 export class userController {
-  //api:查询数据库用户
+  //api:app版本信息
   @get('/app_version')
   async app_version(ctx) {
     const data = {
@@ -18,7 +18,7 @@ export class userController {
       data: data,
     };
   }
-
+   //api:app下载
   @get('/download_app/:name')
   async download_app(ctx) {
     const name = ctx.params.name;
