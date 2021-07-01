@@ -128,7 +128,7 @@ export const admin = (roleExpected) =>
       return (ctx.body = {
         success : false,
         code    : 505,
-        err     : "Cannot destructure property `role` of 'undefined' or 'null'."
+        err     : "不能对 `undefined`或`null`的属性`role`进行结构化"
       });
     }
   });

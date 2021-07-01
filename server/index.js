@@ -3,6 +3,7 @@ const { resolve } = require('path');
 const koaStatic = require('koa-static');
 const R = require('ramda');
 const MIDDLEWARES = [ 'common', 'router' ];
+const bodyParser = require('koa-bodyparser')
 
 /**
  * 封装中间件
@@ -23,12 +24,13 @@ const useMiddlewares = (app) => {
   // 配置静态资源
   const staticPath = '../views';
   app.use(koaStatic(resolve(__dirname, staticPath)));
-
+  //解析post请求的参数
+  app.use(bodyParser())
   // error logger
   app.on('error', (err, ctx) => {
     console.log('error occured:', err);
   });
-
+  //执行中间件
   await useMiddlewares(app);
   // 监听端口
   app.listen(4455, () => {
